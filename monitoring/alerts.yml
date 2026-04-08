@@ -1,0 +1,43 @@
+groups:
+  - name: week11-app-alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: avg(app_cpu_percent) > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: High CPU usage detected
+          description: app_cpu_percent is above 80% for 2 minutes.
+
+      - alert: HighErrorRate
+        expr: (
+          sum(rate(app_errors_total[5m]))
+          /
+          sum(rate(app_requests_total[5m]))
+        ) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: High error rate detected
+          description: More than 5% of requests are failing.
+
+      - alert: ServiceDowntime
+        expr: up{job="web"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Service downtime
+          description: Prometheus cannot scrape the web service.
+
+      - alert: DatabaseConnectionFailure
+        expr: avg(db_connected) == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Database connection failure
+          description: The app cannot reach the database.
+

@@ -1,0 +1,45 @@
+name: CD - Staging
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+jobs:
+  build-push-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to registry
+        run: |
+          echo "${{ secrets.DOCKER_REGISTRY_PASSWORD }}" | docker login \
+            ${{ secrets.DOCKER_REGISTRY_URL }} \
+            -u "${{ secrets.DOCKER_REGISTRY_USERNAME }}" \
+            --password-stdin
+
+      - name: Build Docker image
+        run: |
+          IMAGE="${{ secrets.DOCKER_REGISTRY_URL }}/${{ secrets.DOCKER_IMAGE_NAME }}:${{ github.sha }}"
+          docker build -f docker/Dockerfile.prod -t "$IMAGE" .
+
+      - name: Push Docker image
+        run: |
+          IMAGE="${{ secrets.DOCKER_REGISTRY_URL }}/${{ secrets.DOCKER_IMAGE_NAME }}:${{ github.sha }}"
+          docker push "$IMAGE"
+
+      - name: SSH deploy
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Run remote deploy script
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR_STAGING }}
+        run: |
+          ssh -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" "DEPLOY_DIR='$DEPLOY_DIR' /bin/bash -lc 'bash ./scripts/deploy.sh'"
+
