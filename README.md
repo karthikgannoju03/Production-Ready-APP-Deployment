@@ -1,4 +1,4 @@
-# Week 11 - Production-Ready Flask Deployment System
+# Production-Ready APP Deployment System
 
 Enterprise-grade Dockerized Flask API deployment with:
 `web` behind `nginx`, `postgres`, `redis`, plus monitoring via `prometheus` and `grafana`.
